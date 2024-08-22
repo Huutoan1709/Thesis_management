@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html style="height:100%" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ</title>
+    <link rel="shortcut icon" href="https://th.bing.com/th/id/OIP.ZB8qQ8bsA80TlJzcb7Pj4wAAAA?rs=1&pid=ImgDetMain" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body style="height: 100%">
+{% if user.is_authenticated %}
+
+<div id="root" style="padding: 1px 10px" }>
+    <h1 style="background-color: #0055A8; padding: 20px; text-align: center; color: whitesmoke">
+        Chi tiết khoá luận
+    </h1>
+    <h5 style="text-align: right; color: blue">{{ message }}</h5>
+    <form style="
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px;" action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Đăng xuất</button>
+  </form>
+    <div class="search-container float-right" style="margin-bottom: 10px">
+        <input type="text" id="searchInput" placeholder="Tìm kiếm..." oninput="onChangeText()">
+        <button class="btn-primary" type="button" id="searchButton" onclick="findThesis()">Tìm</button>
+    </div>
+    <table id="khoaLuanTable" class="table">
+        <thead id="thead" style="color: red; font-size: 20px">
+        <tr>
+            <th>ID</th>
+            <th>Tên</th>
+            <th>Ngày tạo</th>
+            <th>Ngày cập nhật</th>
+            <th>Xem điểm</th>
+        </tr>
+        </thead>
+    </table>
+
+</div>
+
+{% else %}
+<p>Please <a href="{% url 'login' %}">login</a> to access this page.</p>
+{% endif %}
+<footer style="background-color: #0055A8;
+              color: #fff;
+              padding: 20px;
+              text-align: center;
+              position: sticky;
+              bottom: 0;
+              width: 100%;
+              top: 90%;
+              margin-top: 40px;
+">
+        <p style="margin-bottom: 0">&copy; 2023 Thesis Management Website</p>
+</footer>
+<script>
+    function onChangeText() {
+  const searchInput = document.getElementById('searchInput');
+  const searchValue = searchInput.value;
+  if(searchValue === '')
+  {
+    window.location.reload();
+  }
+
+}
+    function findThesis(){
+    const searchInput = document.getElementById('searchInput')
+    const searchValue = searchInput.value;
+    console.log('tìm kiếm: ' + searchValue);
+    fetch(`http://10.17.36.194:8000/khoaluans/?q=${searchValue}`)
+  .then(response => response.json())
+  .then(data => {
+    console.log(data)
+
+    const tableBody = document.createElement('tbody');
+    data.results.forEach(item => {
+    const row = document.createElement('tr');
+
+    const idCell = document.createElement('td');
+    idCell.textContent = item.id;
+    row.appendChild(idCell);
+
+    const tenCell = document.createElement('td');
+    tenCell.textContent = item.ten;
+    row.appendChild(tenCell);
+
+    const ngayTaoCell = document.createElement('td');
+      const year1 = item.ngaytao.slice(0, 4);
+      const month1 = item.ngaytao.slice(5, 7);
+      const day1 = item.ngaytao.slice(8, 10);
+      const dateObject1 = new Date(year1, month1 - 1, day1);
+      const formattedDate1 = `${day1}/${month1}/${year1}`;
+      ngayTaoCell.textContent = formattedDate1
+      row.appendChild(ngayTaoCell);
+
+      const ngayCapNhatCell = document.createElement('td');
+      const year2 = item.ngaycapnhat.slice(0, 4);
+      const month2 = item.ngaycapnhat.slice(5, 7);
+      const day2 = item.ngaycapnhat.slice(8, 10);
+      const dateObject2 = new Date(year2, month2 - 1, day2);
+      const formattedDate2 = `${day2}/${month2}/${year2}`;
+      ngayCapNhatCell.textContent = formattedDate2
+      row.appendChild(ngayCapNhatCell);
+
+      const DetailCell = document.createElement('td');
+      const linkElement = document.createElement('a');
+      linkElement.href = `/chitiet_diem/${item.id}/`;
+      linkElement.textContent = 'Chi tiết điểm';
+      DetailCell.appendChild(linkElement);
+      row.appendChild(DetailCell);
+
+
+    tableBody.appendChild(row);
+    })
+    const table = document.getElementById('khoaLuanTable');
+    const thead = table.querySelector('thead');
+
+    while(table.firstChild){
+        table.removeChild(table.firstChild);
+    }
+    table.appendChild(tableBody, table.firstChild);
+    table.insertBefore(thead, table.firstChild);
+
+
+    const moreBtn = document.getElementById('moreButton_id')
+    if(moreBtn)
+    {
+    const moreBtn = document.getElementById('moreButton_id')
+        moreBtn.style.display = 'none'
+    }
+    if (data.next) {
+      moreButton = document.createElement('button');
+      moreButton.textContent = 'Xem thêm';
+      moreButton.style.padding = '5px';
+      moreButton.style.marginLeft = '10px';
+      moreButton.style.marginBottom = '10px';
+      moreButton.style.display = 'block';
+      moreButton.style.position = 'absolute';
+      moreButton.style.left = '50%';
+
+      moreButton.addEventListener('click', () => {
+        currentPage++;
+
+        fetchMoreDataSearch(currentPage);
+      });
+
+      table.appendChild(moreButton);
+    }
+
+  })
+  .catch(error => console.error(error));
+    }
+
+    let currentPage = 1;
+    let moreButton = null
+fetch('http://10.17.36.194:8000/khoaluans/?page=1')
+  .then(response => response.json())
+  .then(data => {
+    const tableBody = document.createElement('tbody');
+
+    data.results.forEach(item => {
+      const row = document.createElement('tr');
+
+      const idCell = document.createElement('td');
+      idCell.textContent = item.id;
+      row.appendChild(idCell);
+
+      if(item.link === null || item.link === '')
+      {
+        const tenCell = document.createElement('td');
+        tenCell.textContent = item.ten;
+        row.appendChild(tenCell);
+      }
+      else
+      {
+        const tenCell = document.createElement('td');
+        const driveElement = document.createElement('a');
+        driveElement.href = item.link;
+        driveElement.textContent = item.ten;
+        tenCell.appendChild(driveElement);
+        row.appendChild(tenCell);
+      }
+
+
+      const ngayTaoCell = document.createElement('td');
+      const year1 = item.ngaytao.slice(0, 4);
+      const month1 = item.ngaytao.slice(5, 7);
+      const day1 = item.ngaytao.slice(8, 10);
+      const dateObject1 = new Date(year1, month1 - 1, day1);
+      const formattedDate1 = `${day1}/${month1}/${year1}`;
+      ngayTaoCell.textContent = formattedDate1
+      row.appendChild(ngayTaoCell);
+
+      const ngayCapNhatCell = document.createElement('td');
+      const year2 = item.ngaycapnhat.slice(0, 4);
+      const month2 = item.ngaycapnhat.slice(5, 7);
+      const day2 = item.ngaycapnhat.slice(8, 10);
+      const dateObject2 = new Date(year2, month2 - 1, day2);
+      const formattedDate2 = `${day2}/${month2}/${year2}`;
+      ngayCapNhatCell.textContent = formattedDate2
+      row.appendChild(ngayCapNhatCell);
+
+      const DetailCell = document.createElement('td');
+      const linkElement = document.createElement('a');
+      linkElement.href = `/chitiet_diem/${item.id}/`;
+      linkElement.textContent = 'Chi tiết điểm';
+      DetailCell.appendChild(linkElement);
+      row.appendChild(DetailCell);
+
+      tableBody.appendChild(row);
+    });
+
+    const table = document.getElementById('khoaLuanTable');
+    table.appendChild(tableBody);
+
+    const lastChild = document.body.lastElementChild
+    console.log(lastChild.toString())
+
+    if (data.next) {
+      moreButton = document.createElement('button');
+      moreButton.textContent = 'Xem thêm';
+      moreButton.id = 'moreButton_id'
+      moreButton.style.padding = '5px';
+      moreButton.style.marginLeft = '10px';
+      moreButton.style.marginBottom = '10px';
+      moreButton.style.display = 'block';
+      moreButton.style.position = 'absolute';
+      moreButton.style.left = '50%';
+      moreButton.addEventListener('click', () => {
+        currentPage++;
+        fetchMoreData(currentPage);
+      });
+
+      table.appendChild(moreButton);
+    }
+  })
+  .catch(error => console.error(error));
+
+function fetchMoreData(page) {
+  fetch(`http://10.17.36.194:8000/khoaluans/?page=${page}`)
+    .then(response => response.json())
+    .then(data => {
+      const newTableBody = document.createElement('tbody');
+
+      data.results.forEach(item => {
+        const row = document.createElement('tr');
+
+        const idCell = document.createElement('td');
+        idCell.textContent = item.id;
+        row.appendChild(idCell);
+
+        if(item.link === null || item.link === '')
+      {
+        const tenCell = document.createElement('td');
+        tenCell.textContent = item.ten;
+        row.appendChild(tenCell);
+      }
+      else
+      {
+        const tenCell = document.createElement('td');
+        const driveElement = document.createElement('a');
+        driveElement.href = item.link;
+        driveElement.textContent = item.ten;
+        tenCell.appendChild(driveElement);
+        row.appendChild(tenCell);
+      }
+
+      const ngayTaoCell = document.createElement('td');
+      const year1 = item.ngaytao.slice(0, 4);
+      const month1 = item.ngaytao.slice(5, 7);
+      const day1 = item.ngaytao.slice(8, 10);
+      const dateObject1 = new Date(year1, month1 - 1, day1);
+      const formattedDate1 = `${day1}/${month1}/${year1}`;
+      ngayTaoCell.textContent = formattedDate1
+      row.appendChild(ngayTaoCell);
+
+      const ngayCapNhatCell = document.createElement('td');
+      const year2 = item.ngaycapnhat.slice(0, 4);
+      const month2 = item.ngaycapnhat.slice(5, 7);
+      const day2 = item.ngaycapnhat.slice(8, 10);
+      const dateObject2 = new Date(year2, month2 - 1, day2);
+      const formattedDate2 = `${day2}/${month2}/${year2}`;
+      ngayCapNhatCell.textContent = formattedDate2
+      row.appendChild(ngayCapNhatCell);
+
+      const DetailCell = document.createElement('td');
+      const linkElement = document.createElement('a');
+      linkElement.href = `/chitiet_diem/${item.id}/`;
+      linkElement.textContent = 'Chi tiết điểm';
+      DetailCell.appendChild(linkElement);
+      row.appendChild(DetailCell);
+
+
+        newTableBody.appendChild(row);
+      });
+
+      const table = document.getElementById('khoaLuanTable');
+      table.appendChild(newTableBody);
+
+      if (data.next) {
+
+
+        moreButton.addEventListener('click', () => {
+          currentPage++;
+
+          fetchMoreData(currentPage);
+        });
+        table.appendChild(moreButton);
+      }
+      else{
+if (moreButton) {
+          moreButton.style.display = 'none';
+        }
+      }
+    })
+    .catch(error => console.error(error));
+}
+function fetchMoreDataSearch(page) {
+const searchInput = document.getElementById('searchInput')
+    const searchValue = searchInput.value;
+  fetch(`http://10.17.36.194:8000/khoaluans/?page=${page}&q=${searchValue}`)
+    .then(response => response.json())
+    .then(data => {
+      const newTableBody = document.createElement('tbody');
+
+      data.results.forEach(item => {
+        const row = document.createElement('tr');
+
+        const idCell = document.createElement('td');
+        idCell.textContent = item.id;
+        row.appendChild(idCell);
+
+        if(item.link === null || item.link === '')
+      {
+        const tenCell = document.createElement('td');
+        tenCell.textContent = item.ten;
+        row.appendChild(tenCell);
+      }
+      else
+      {
+        const tenCell = document.createElement('td');
+        const driveElement = document.createElement('a');
+        driveElement.href = item.link;
+        driveElement.textContent = item.ten;
+        tenCell.appendChild(driveElement);
+        row.appendChild(tenCell);
+      }
+
+      const ngayTaoCell = document.createElement('td');
+      const year1 = item.ngaytao.slice(0, 4);
+      const month1 = item.ngaytao.slice(5, 7);
+      const day1 = item.ngaytao.slice(8, 10);
+      const dateObject1 = new Date(year1, month1 - 1, day1);
+      const formattedDate1 = `${day1}/${month1}/${year1}`;
+      ngayTaoCell.textContent = formattedDate1
+      row.appendChild(ngayTaoCell);
+
+      const ngayCapNhatCell = document.createElement('td');
+      const year2 = item.ngaycapnhat.slice(0, 4);
+      const month2 = item.ngaycapnhat.slice(5, 7);
+      const day2 = item.ngaycapnhat.slice(8, 10);
+      const dateObject2 = new Date(year2, month2 - 1, day2);
+      const formattedDate2 = `${day2}/${month2}/${year2}`;
+      ngayCapNhatCell.textContent = formattedDate2
+      row.appendChild(ngayCapNhatCell);
+
+      const DetailCell = document.createElement('td');
+      const linkElement = document.createElement('a');
+      linkElement.href = `/chitiet_diem/${item.id}/`;
+      linkElement.textContent = 'Chi tiết điểm';
+      DetailCell.appendChild(linkElement);
+      row.appendChild(DetailCell);
+
+
+        newTableBody.appendChild(row);
+      });
+
+      const table = document.getElementById('khoaLuanTable');
+      table.appendChild(newTableBody);
+
+      if (data.next) {
+
+        moreButton.addEventListener('click', () => {
+          currentPage++;
+
+          fetchMoreDataSearch(currentPage);
+        });
+        table.appendChild(moreButton);
+      }
+      else{
+if (moreButton) {
+            currentPage --;
+          moreButton.style.display = 'none';
+
+        }
+      }
+    })
+    .catch(error => console.error(error));
+}
+</script>
+</body>
+</html>

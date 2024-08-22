@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi tiết điểm</title>
+    <link rel="shortcut icon" href="https://th.bing.com/th/id/OIP.ZB8qQ8bsA80TlJzcb7Pj4wAAAA?rs=1&pid=ImgDetMain" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+{% if user.is_authenticated %}
+<div id="root" style="padding: 1px 10px"}>
+    <h1 id="h1Dom" style="background-color: #0055A8; padding: 20px; text-align: center; color: whitesmoke">
+        Chi tiết điểm
+    </h1>
+    <button onclick="window.location.href='http://10.17.36.194:8000/home/';" class="btn btn-primary"></i>Về trang trước</button>
+    <div style="width: 100%; margin-bottom: 10px"></div>
+    <h4  style="display: inline-block; " >Tên khoá luận: </h4>
+    <div id="thesisName"></div>
+    <div></div>
+    <h4  style="display: inline-block; " >Điểm tổng: </h4>
+    <div id="thesisScore"></div>
+    <h4  style="margin-bottom: 15px">Chi tiết điểm: </h4>
+    <table id="khoaLuanTable" style="margin-bottom: 0" class="table">
+        <thead style="color: #0055A8; font-size: 20px">
+        <tr>
+            <th>Người đánh giá</th>
+            <th>Tiêu chí</th>
+            <th>Số điểm</th>
+            <th>Nhận xét</th>
+        </tr>
+        </thead>
+    </table>
+    <button id="exportToWord"  class="btn btn-primary float-right">In bảng điểm</button>
+    {% else %}
+    <p>Please <a href="{% url 'login' %}">login</a> to access this page.</p>
+{% endif %}
+
+    <script>
+const exportToWordBtn = document.getElementById('exportToWord');
+let thesName;
+fetch(`http://10.17.36.194:8000/diem_detail/{{id}}`)
+  .then(response => response.json())
+  .then(data => {
+    console.log(data)
+    if(data.total_score === null || isNaN(data.total_score)){
+    exportToWordBtn.style.display = 'none'
+    }
+    thesName = data.ten
+
+    const thesisName = document.getElementById('thesisName')
+    const thesisTotal = document.getElementById('thesisScore')
+
+    const name = document.createElement('h4')
+    name.textContent = data.ten
+    name.style.display = 'inline-block'
+    thesisName.style.display = 'inline-block'
+    thesisName.style.color = 'red'
+    thesisName.appendChild(name)
+
+    const total = document.createElement('h4')
+    const roundedTotal = parseFloat(data.total_score).toFixed(2);
+    if(data.total_score !== null && !isNaN(data.total_score))
+        total.textContent = roundedTotal
+    else
+        total.textContent = 'Chưa nhập điểm'
+
+    total.style.display = 'inline-block'
+    total.style.color = 'red'
+    thesisTotal.style.display = 'inline-block'
+    thesisScore.appendChild(total)
+
+    const tableBody = document.createElement('tbody')
+
+    data.diems.forEach(item => {
+    console.log(item)
+    const row = document.createElement('tr')
+
+    const uCell = document.createElement('td')
+    uCell.textContent = item.nguoi_danhgia
+    row.appendChild(uCell)
+
+    const tieuchiCell = document.createElement('td')
+    tieuchiCell.textContent = item.tieuchi
+    row.appendChild(tieuchiCell)
+
+    const soDiemCell = document.createElement('td')
+    soDiemCell.textContent = item.so_diem
+    row.appendChild(soDiemCell)
+
+    const cmtCell = document.createElement('td')
+    cmtCell.textContent = item.nhanxet
+    row.appendChild(cmtCell)
+
+    tableBody.appendChild(row)
+
+    })
+
+    const table = document.getElementById('khoaLuanTable');
+    table.appendChild(tableBody);
+  })
+  .catch(error => console.error(error));
+
+
+
+
+exportToWordBtn.addEventListener('click', () => {
+<!--Lấy nội dung HTML của trang-->
+  const htmlContent = document.getElementById('root').innerHTML;
+
+<!--Tạo một đối tượng Blob chứa nội dung HTML-->
+  const blob = new Blob([htmlContent], { type: 'application/msword' });
+
+<!--Tạo một URL tạm thời cho đối tượng Blob-->
+  const url = URL.createObjectURL(blob);
+
+<!--Tạo một liên kết tải về-->
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${thesName}_{{id}}.doc`;
+
+<!--Thêm liên kết vào DOM và click để tải về-->
+  document.body.appendChild(link);
+  link.click();
+
+<!--Xóa liên kết khỏi DOM-->
+  document.body.removeChild(link);
+});
+
+
+
+
+
+</script>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Thống kê tần suất tham gia{% endblock %}
+
+{% block content %}
+    <h1 style="font-weight: bold">Tần suất tham khóa luận của các khoa
+<!-- Form lọc theo năm -->
+    <form method="GET" style="margin-bottom: 20px;margin-top: 20px">
+        <label for="year" style="font-size: 0.875rem">Chọn năm:</label>
+        <select name="year" id="year">
+            <option value="">Tất cả</option>
+            {% for year in years %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Lọc</button>
+    </form>
+
+       <h3>Tổng quan:</h3>
+    <ul>
+        {% for item in khoa_data %}
+            <li>Khoa {{ item.ten }}: {{ item.so_khoaluan }}</li>
+        {% endfor %}
+    </ul>
+    </h1>
+    <canvas id="tanSuatKhoaLuanChart" width="700" height=250"></canvas>
+    <h1 style="font-weight: bold"></h1>
+    <canvas id="diemKhoaLuanChart"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const khoaData = {{ khoa_data|safe }};
+            const khoaLabels = khoaData.map(item => item.ten);
+            const khoaCounts = khoaData.map(item => item.so_khoaluan);
+
+            const colors = [
+                'rgba(255, 99, 132, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+                'rgba(255, 206, 86, 0.2)',
+                'rgba(75, 192, 192, 0.2)',
+                'rgba(153, 102, 255, 0.2)',
+                'rgba(255, 159, 64, 0.2)'
+            ];
+
+            const borderColors = [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)'
+            ];
+
+            new Chart(document.getElementById('tanSuatKhoaLuanChart'), {
+                type: 'bar',
+                data: {
+                    labels: khoaLabels,
+                    datasets: [{
+                        label: 'Số Lương',
+                        data: khoaCounts,
+                        backgroundColor: colors.slice(0, khoaLabels.length),
+                        borderColor: borderColors.slice(0, khoaLabels.length),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    animation: {
+                        duration: 4000,
+                        easing: 'easeInOutBounce'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}

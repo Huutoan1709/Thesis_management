@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Thống kê điểm trung bình khóa luận{% endblock %}
+
+{% block content %}
+    <h1 style="font-weight: bold">Thống kê điểm trung bình khóa luận của các khoa</h1>
+    <!-- Form lọc theo năm -->
+    <form method="GET" style="margin-bottom: 20px; margin-top: 20px;">
+        <label style="font-weight: bold" for="year">Chọn năm:</label>
+        <select name="year" id="year">
+            <option value="">Tất cả</option>
+            {% for year in years %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Lọc</button>
+    </form>
+    <h3>Tổng quan:</h3>
+    <ul>
+        {% for item in khoa_data %}
+            <li>Khoa {{ item.ten }}: {{ item.diem_trung_binh|floatformat:2 }}</li>
+        {% endfor %}
+    </ul>
+    <!-- Biểu đồ điểm trung bình khóa luận -->
+    <canvas id="diemTrungBinhChart" width="700" height="250"></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const diemData = {{ khoa_data|safe }};
+            const khoaLabels = diemData.map(item => item.ten);
+            const diemTrungBinh = diemData.map(item => item.diem_trung_binh);
+
+            const colors = [
+                'rgba(75, 192, 192, 0.2)'
+            ];
+
+            const borderColors = [
+                'rgba(75, 192, 192, 1)'
+            ];
+
+            new Chart(document.getElementById('diemTrungBinhChart'), {
+                type: 'line',
+                data: {
+                    labels: khoaLabels,
+                    datasets: [{
+                        label: 'Điểm Trung Bình',
+                        data: diemTrungBinh,
+                        backgroundColor: colors[0],
+                        borderColor: borderColors[0],
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                        },
+                    },
+                    hover: {
+                        mode: 'nearest',
+                        intersect: true
+                    },
+                    animation: {
+                        duration: 4000,
+                        easing: 'easeInOutBounce'
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 10
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
